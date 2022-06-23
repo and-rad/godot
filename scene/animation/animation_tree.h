@@ -45,6 +45,9 @@ class AnimationTree;
 class AnimationNode : public Resource {
 	GDCLASS(AnimationNode, Resource);
 
+protected:
+	real_t blend_weight = 1.0;
+
 public:
 	enum FilterAction {
 		FILTER_IGNORE,
@@ -86,7 +89,7 @@ public:
 	Vector<real_t> blends;
 	State *state = nullptr;
 
-	double _pre_process(const StringName &p_base_path, AnimationNode *p_parent, State *p_state, double p_time, bool p_seek, bool p_seek_root, const Vector<StringName> &p_connections);
+	double _pre_process(const StringName &p_base_path, AnimationNode *p_parent, State *p_state, double p_time, bool p_seek, bool p_seek_root, real_t p_blend, const Vector<StringName> &p_connections);
 
 	//all this is temporary
 	StringName base_path;

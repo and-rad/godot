@@ -131,9 +131,9 @@ double AnimationNodeAnimation::process(double p_time, bool p_seek, bool p_seek_r
 	}
 
 	if (play_mode == PLAY_MODE_FORWARD) {
-		blend_animation(animation, time, step, p_seek, p_seek_root, 1.0, pingponged);
+		blend_animation(animation, time, step, p_seek, p_seek_root, blend_weight, pingponged);
 	} else {
-		blend_animation(animation, anim_size - time, -step, p_seek, p_seek_root, 1.0, pingponged);
+		blend_animation(animation, anim_size - time, -step, p_seek, p_seek_root, blend_weight, pingponged);
 	}
 	set_parameter(this->time, time);
 

@@ -120,11 +120,12 @@ void AnimationNode::blend_animation(const StringName &p_animation, double p_time
 	state->animation_states.push_back(anim_state);
 }
 
-double AnimationNode::_pre_process(const StringName &p_base_path, AnimationNode *p_parent, State *p_state, double p_time, bool p_seek, bool p_seek_root, const Vector<StringName> &p_connections) {
+double AnimationNode::_pre_process(const StringName &p_base_path, AnimationNode *p_parent, State *p_state, double p_time, bool p_seek, bool p_seek_root, real_t p_blend, const Vector<StringName> &p_connections) {
 	base_path = p_base_path;
 	parent = p_parent;
 	connections = p_connections;
 	state = p_state;
+	blend_weight = p_blend;
 
 	double t = process(p_time, p_seek, p_seek_root);
 
@@ -193,6 +194,7 @@ double AnimationNode::_blend_node(const StringName &p_subpath, const Vector<Stri
 	const real_t *blendr = blends.ptr();
 
 	bool any_valid = false;
+	real_t blend = p_blend * blend_weight;
 
 	if (has_filter() && is_filter_enabled() && p_filter != FILTER_IGNORE) {
 		for (int i = 0; i < blend_count; i++) {
@@ -217,7 +219,7 @@ double AnimationNode::_blend_node(const StringName &p_subpath, const Vector<Stri
 						continue;
 					}
 
-					blendw[i] = blendr[i] * p_blend;
+					blendw[i] = blendr[i] * blend;
 					if (blendw[i] > CMP_EPSILON) {
 						any_valid = true;
 					}
@@ -232,7 +234,7 @@ double AnimationNode::_blend_node(const StringName &p_subpath, const Vector<Stri
 						continue;
 					}
 
-					blendw[i] = blendr[i] * p_blend;
+					blendw[i] = blendr[i] * blend;
 					if (blendw[i] > CMP_EPSILON) {
 						any_valid = true;
 					}
@@ -244,7 +246,7 @@ double AnimationNode::_blend_node(const StringName &p_subpath, const Vector<Stri
 
 				for (int i = 0; i < blend_count; i++) {
 					if (blendw[i] == 1.0) {
-						blendw[i] = blendr[i] * p_blend; //filtered, blend
+						blendw[i] = blendr[i] * blend; //filtered, blend
 					} else {
 						blendw[i] = blendr[i]; //not filtered, do not blend
 					}
@@ -259,7 +261,7 @@ double AnimationNode::_blend_node(const StringName &p_subpath, const Vector<Stri
 	} else {
 		for (int i = 0; i < blend_count; i++) {
 			//regular blend
-			blendw[i] = blendr[i] * p_blend;
+			blendw[i] = blendr[i] * blend;
 			if (blendw[i] > CMP_EPSILON) {
 				any_valid = true;
 			}
@@ -287,9 +289,9 @@ double AnimationNode::_blend_node(const StringName &p_subpath, const Vector<Stri
 	}
 
 	if (!p_seek && p_optimize && !any_valid) {
-		return p_node->_pre_process(new_path, new_parent, state, 0, p_seek, p_seek_root, p_connections);
+		return p_node->_pre_process(new_path, new_parent, state, 0, p_seek, p_seek_root, blend, p_connections);
 	}
-	return p_node->_pre_process(new_path, new_parent, state, p_time, p_seek, p_seek_root, p_connections);
+	return p_node->_pre_process(new_path, new_parent, state, p_time, p_seek, p_seek_root, blend, p_connections);
 }
 
 int AnimationNode::get_input_count() const {
@@ -937,11 +939,11 @@ void AnimationTree::_process_graph(double p_delta) {
 	{
 		if (started) {
 			//if started, seek
-			root->_pre_process(SceneStringNames::get_singleton()->parameters_base_path, nullptr, &state, 0, true, false, Vector<StringName>());
+			root->_pre_process(SceneStringNames::get_singleton()->parameters_base_path, nullptr, &state, 0, true, false, 1.0, Vector<StringName>());
 			started = false;
 		}
 
-		root->_pre_process(SceneStringNames::get_singleton()->parameters_base_path, nullptr, &state, p_delta, false, false, Vector<StringName>());
+		root->_pre_process(SceneStringNames::get_singleton()->parameters_base_path, nullptr, &state, p_delta, false, false, 1.0, Vector<StringName>());
 	}
 
 	if (!state.valid) {
